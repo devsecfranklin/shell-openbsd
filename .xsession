@@ -14,6 +14,9 @@ LANG= xclock -strftime "%a %e %b %Y %H:%M" &
 # disable system beep
 xset b off
 
-xsetroot -solid black &
+xsetroot -background black -mod 16 32
+# xsetroot -background DarkSlateGrey -mod 16 32
 xterm -bg black -fg white +sb&
-cwm
+#exec /usr/X11R6/bin/cwm
+# exec /usr/local/bin/startfluxbox
+exec /usr/local/bin/startxfce4
