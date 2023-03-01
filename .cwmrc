@@ -1,0 +1,4 @@
+borderwidth 2
+color activeborder blue
+color inactiveborder darkblue
+gap 0 0 0 180
