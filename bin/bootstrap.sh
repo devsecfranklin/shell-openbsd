@@ -165,12 +165,12 @@ EOF
 function setup_wifi() {
   doas ifconfig # lists all supported interfaces
   doas fw_update # to install missing driver for your card
-  dmesg | grep pci | grep <wifi card model> # report if not supported
+  #dmesg | grep pci | grep <wifi card model> # report if not supported
   doas ifconfig # again to check if your card listed
-  doas ifconfig join <Wifi name> wpakey <password> # to join your wifi
+  #doas ifconfig join <Wifi name> wpakey <password> # to join your wifi
   # Run following 2 lines if you want to auto join your wifi:
-  doas echo "join wifiname wpakey password" >> /etc/hostname.<wificardname>
-  doas echo "dhcp" >> /etc/hostname.<wificardname>
+  #doas echo "join wifiname wpakey password" >> /etc/hostname.<wificardname>
+  #doas echo "dhcp" >> /etc/hostname.<wificardname>
   doas sh /etc/netstart # to restart the network
   ping openbsd.org # to test your network
 }
@@ -186,16 +186,15 @@ function main() {
   rcctl enable apmd ## enable power daemon
   rcctl start apmd  ## start power daemon
   
-  
+  # doas route add -net 10.10.8.0/21 10.0.0.7  
   # update the system
   doas syspatch
-  
+  krb5_conf 
   doas pkg_add colorls polybar openbsd-wallpaper fluxbox neofetch
   doas pkg_add git
   doas pkg_add xfce4-power-manager xfce4-whiskermenu
   ln -s -f yourloginpics ~/.face # profile in whiskermenu and in lock screen
   
-  krb5_conf
   setup_ssh_key
   
   # nfs_configuration
