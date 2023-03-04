@@ -26,7 +26,7 @@ MY_USER="franklin"
 
 function install_hosts_file() {
   
-  cat <<EOF > /etc/hosts
+  doas cat <<EOF > /etc/hosts
 127.0.0.1       localhost
 ::1             localhost ip6-localhost ip6-loopback
 ff02::1         ip6-allnodes
@@ -45,7 +45,7 @@ ff02::2         ip6-allrouters
 10.10.12.91 node901.lab.bitsmasher.net node901
 10.10.12.92 node902.lab.bitsmasher.net node902
 10.10.12.93 node903.lab.bitsmasher.net node903
-10.10.12.254 odroid-c1.lab.bitsmasher.net odroid-c1
+10.10.12.254 odroid-c1.lab.bitsmasher.net odroid-c1 kdc1
 10.10.13.1 server3.lab.bitsmasher.net server3
 10.10.13.10 bbb1.lab.bitsmasher.net bbb1
 EOF
@@ -57,7 +57,7 @@ function setup_ssh_key() {
   if [ ! -d "/root/.ssh" ]; then mkdir /root/.ssh; fi
   chmod 700 /root/.ssh
   
-cat <<EOF >> /root/.ssh/authorized_keys
+  doas cat <<EOF >> /root/.ssh/authorized_keys
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDU9GRwNI2y9NuElgDgLcfDuGstEZiHaMT/2Gs0prPUFN5egpqzJy1qrf7VLf7U4CyxU8QXnhPhzE9qLnDmqFMWpfyaw4F16
 YhDzxESZHZ6gqKcPhHRPTwVyIdF9nhH0bh9jZxdvUMuUO+G7T+kvKTcrLlmxnbE6dd/UOcZesuyjNeyPfPkYPXrx40LtXwEvk/EoaTQjjlBxOh2YWevHIVEeKgIXDd96UfrQT
 7ywPT9klBPEc7GxgDMNFKJ1bSWR51TOETRAfFmEnoc0pmULpvzQgj28ppxUZCEXBt8OImkRSG+rPypjIWIEIa54ap3kL9DeJbK6iC9DdXzmCp004EdZdpXqWzLkHOWL58En0c
@@ -76,7 +76,7 @@ function setup_ldap() {
   if [ ! -d "/etc/ldap" ]; then mkdir /etc/ldap; fi
   chmod 755 /etc/ldap
   
-cat <<EOF > /etc/ldap.conf
+  cat <<EOF > /etc/ldap.conf
 BASE    dc=lab,dc=bitsmasher,dc=net
 URI     ldap://10.10.13.1/
 TLS_REQCERT allow
@@ -85,20 +85,20 @@ SASL_MECH GSSAPI
 SASL_REALM LAB.BITSMASHER.NET
 EOF
   
-cat <<EOF > /etc/pam_ldap.conf
+  doas cat <<EOF > /etc/pam_ldap.conf
 base dc=lab,dc=bitsmasher,dc=net
 uri ldap://10.10.13.1/
 ldap_version 3
 pam_password md5
 EOF
   
-cat <<EOF > /etc/libnss-ldap.conf
+  doas cat <<EOF > /etc/libnss-ldap.conf
 base dc=lab,dc=bitsmasher,dc=net
 uri ldap://10.10.13.1/
 ldap_version 3
 EOF
   
-cat <<EOF > /etc/nsswitch.conf
+  doas cat <<EOF > /etc/nsswitch.conf
 passwd:         compat systemd ldap
 group:          compat systemd ldap
 shadow:         compat
@@ -129,11 +129,11 @@ function krb5_conf() {
   declare -a Pakcages=(  "heimdal" "heimdal-libs" "login_krb5" )
   for i in ${Packages[@]};
   do
-    pkg_add ${i}
+    doas pkg_add ${i}
   done
   
   echo -e "${LGREEN}install /etc/krb5.conf${NC}"
-cat <<EOF >> /etc/krb5.conf
+doas cat <<EOF >> /etc/krb5.conf
 [libdefaults]
 default_realm = LAB.BITSMASHER.NET
 dns_lookup_realm = true
@@ -159,7 +159,7 @@ bitsmasher.net = LAB.BITSMASHER.NET
 lab.bitsmasher.net = LAB.BITSMASHER.NET
 .lab.bitsmasher.net = LAB.BITSMASHER.NET
 EOF
-  
+  verify_krb5_conf
 }
 
 function setup_wifi() {
@@ -175,25 +175,30 @@ function setup_wifi() {
   ping openbsd.org # to test your network
 }
 
-function main() {
+function initial_setup() {
   # add my user to the staff group
   usermod -G staff franklin
   usermod -G wheel franklin
-  echo "permit persist :wheel" >> /etc/doas.conf
+  doas echo "permit persist :wheel" >> /etc/doas.conf
   
-  rcctl enable messagebus ## enable dbus
-  rcctl start messagebus ## start dbus
-  rcctl enable apmd ## enable power daemon
-  rcctl start apmd  ## start power daemon
+  doas rcctl enable messagebus ## enable dbus
+  doas rcctl start messagebus ## start dbus
+  doas rcctl enable apmd ## enable power daemon
+  doas rcctl start apmd  ## start power daemon
+}
+
+function main() {
+  #initial_setup
   
   # doas route add -net 10.10.8.0/21 10.0.0.7  
   # update the system
   doas syspatch
   krb5_conf 
-  doas pkg_add colorls polybar openbsd-wallpaper fluxbox neofetch
-  doas pkg_add git
+  doas pkg_add colorls polybar fluxbox neofetch openbsd-backgrounds 
+  # Now you can run openbsd-wallpaper 
+  doas pkg_add fish git
   doas pkg_add xfce4-power-manager xfce4-whiskermenu
-  ln -s -f yourloginpics ~/.face # profile in whiskermenu and in lock screen
+  # ln -s -f yourloginpics ~/.face # profile in whiskermenu and in lock screen
   
   setup_ssh_key
   

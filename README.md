@@ -1,11 +1,12 @@
 # shell-openbsd
 
-#mount the drives
-# setup doas
-# set up kerberos
+## mount the drives
 
-# update the system
+## update the system
+
+```sh
 doas syspatch
+```
 
 copy in /etc/rc.conf.local
 
